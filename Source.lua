@@ -1,66 +1,123 @@
 
--- Create the loading screen
-local function createLoadingScreen(title, name, loadingText)
-    local screenGui = Instance.new("ScreenGui")
-    screenGui.Name = "LoadingScreen"
-    screenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+#!/bin/bash
 
-    -- Create background frame
-    local background = Instance.new("Frame")
-    background.Size = UDim2.new(1, 0, 1, 0)
-    background.Position = UDim2.new(0, 0, 0, 0)
-    background.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-    background.BackgroundTransparency = 0.6
-    background.Parent = screenGui
+# Enable colors
+BLUE='\033[1;34m'
+GREEN='\033[1;32m'
+YELLOW='\033[1;33m'
+RED='\033[1;31m'
+GRAY='\033[1;30m'
+NC='\033[0m' # No Color
 
-    -- Create title text
-    local titleLabel = Instance.new("TextLabel")
-    titleLabel.Size = UDim2.new(1, 0, 0, 50)
-    titleLabel.Position = UDim2.new(0, 0, 0.1, 0)
-    titleLabel.Text = title or "Loading..."  -- Default to "Loading..."
-    titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    titleLabel.TextScaled = true
-    titleLabel.BackgroundTransparency = 1
-    titleLabel.Font = Enum.Font.SourceSansBold
-    titleLabel.Parent = screenGui
+INSTALL_DIR="$HOME/.Pegasus-install"
+CONFIG_FILE="$INSTALL_DIR/config"
 
-    -- Create name text
-    local nameLabel = Instance.new("TextLabel")
-    nameLabel.Size = UDim2.new(1, 0, 0, 30)
-    nameLabel.Position = UDim2.new(0, 0, 0.2, 0)
-    nameLabel.Text = name or "VFVFV Library"
-    nameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    nameLabel.TextScaled = true
-    nameLabel.BackgroundTransparency = 1
-    nameLabel.Font = Enum.Font.SourceSans
-    nameLabel.Parent = screenGui
+# Ensure the installation folder exists
+if [ ! -d "$INSTALL_DIR" ]; then
+    mkdir -p "$INSTALL_DIR"
+    echo "setup_done=false" > "$CONFIG_FILE"
+fi
 
-    -- Create loading text (this is customizable for the user)
-    local loadingTextLabel = Instance.new("TextLabel")
-    loadingTextLabel.Size = UDim2.new(1, 0, 0, 50)
-    loadingTextLabel.Position = UDim2.new(0, 0, 0.4, 0)
-    loadingTextLabel.Text = loadingText or "Please wait..."  -- Default to "Please wait..."
-    loadingTextLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    loadingTextLabel.TextScaled = true
-    loadingTextLabel.BackgroundTransparency = 1
-    loadingTextLabel.Font = Enum.Font.SourceSans
-    loadingTextLabel.Parent = screenGui
+# Load config
+source "$CONFIG_FILE"
 
-    -- Create loading bar background
-    local barBackground = Instance.new("Frame")
-    barBackground.Size = UDim2.new(0.8, 0, 0, 25)
-    barBackground.Position = UDim2.new(0.1, 0, 0.55, 0)
-    barBackground.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    barBackground.BackgroundTransparency = 0.3
-    barBackground.Parent = screenGui
+# Function: Show Pegasus Banner
+show_banner() {
+    clear
+    echo -e "${BLUE}"
+    echo "██████╗ ███████╗ ██████╗  █████╗  ██████╗ ██╗   ██╗ ██████╗ "
+    echo "██╔══██╗██╔════╝██╔════╝ ██╔══██╗██╔════╝ ██║   ██║██╔════╝ "
+    echo "██████╔╝█████╗  ██║  ███╗███████║██║  ███╗██║   ██║██║  ███╗"
+    echo "██╔══██╗██╔══╝  ██║   ██║██╔══██║██║   ██║██║   ██║██║   ██║"
+    echo "██║  ██║███████╗╚██████╔╝██║  ██║╚██████╔╝╚██████╔╝╚██████╔╝"
+    echo "╚═╝  ╚═╝╚══════╝ ╚═════╝ ╚═╝  ╚═╝ ╚═════╝  ╚═════╝  ╚═════╝ "
+    echo -e "${NC}"
+}
 
-    -- Create loading bar (this will be animated)
-    local loadingBar = Instance.new("Frame")
-    loadingBar.Size = UDim2.new(0, 0, 1, 0)
-    loadingBar.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
-    loadingBar.BackgroundTransparency = 0
-    loadingBar.Parent = barBackground
+# Function: Open Website (Screenscraper link)
+open_website() {
+    echo -e "${YELLOW}[•] Opening Screenscraper website...${NC}"
+    xdg-open "https://screenscraper.fr/membreinscription.php"
+    sleep 1
+}
 
-    -- Return the screenGui so we can modify it later
-    return screenGui, loadingBar, loadingTextLabel
-end
+# Function: Setup Pegasus (Runs setup script, disabled after first run)
+setup_pegasus() {
+    if [ "$setup_done" = "true" ]; then
+        echo -e "${RED}[✗] Setup has already been completed. You cannot run it again.${NC}"
+        sleep 2
+        return
+    fi
+
+    echo -e "${YELLOW}[•] Setting up Pegasus (Skyscraper)...${NC}"
+    curl -O -L -q https://raw.githubusercontent.com/SoumyBhow/Skyscraper-Android-Installer-Script/master/termux_update_skyscraper.sh \
+        && chmod +x termux_update_skyscraper.sh \
+        && bash termux_update_skyscraper.sh
+
+    echo -e "${GREEN}[✓] Pegasus setup complete!${NC}"
+    
+    # Mark setup as done
+    sed -i 's/setup_done=false/setup_done=true/' "$CONFIG_FILE"
+    sleep 1.5
+}
+
+# Function: Select User Configuration
+select_user_config() {
+    echo -e "${BLUE}---------------------------------${NC}"
+    echo -e "${GREEN}  1. ARMv7${NC}"
+    echo -e "${GREEN}  2. Not ready yet${NC}"
+    echo -e "${BLUE}---------------------------------${NC}"
+    read -p "Select an option: " config_choice
+
+    case $config_choice in
+        1)  
+            if [ -d "$INSTALL_DIR" ]; then
+                cd "$INSTALL_DIR"
+                echo -e "${YELLOW}[•] Removing old config.ini...${NC}"
+                rm -f config.ini
+                echo -e "${YELLOW}[•] Downloading new config.ini...${NC}"
+                wget https://github.com/CSCash/EMU-SETUP-PEGASUS-/releases/download/config.ini/config.ini
+                echo -e "${GREEN}[✓] Config updated successfully!${NC}"
+            else
+                echo -e "${RED}[✗] Folder .Pegasus-install not found! Run Setup first.${NC}"
+            fi
+            sleep 1.5
+            ;;
+        2)  
+            echo -e "${YELLOW}[•] This option is not ready yet!${NC}"
+            sleep 1.5
+            ;;
+        *)  
+            echo -e "${RED}[✗] Invalid option! Try again.${NC}"
+            sleep 1
+            ;;
+    esac
+}
+
+# Main Menu Loop
+while true; do
+    show_banner
+    echo -e "${BLUE}---------------------------------${NC}"
+    echo -e "${GREEN}  1. Open Screenscraper Website${NC}"
+    
+    if [ "$setup_done" = "true" ]; then
+        echo -e "${GRAY}  2. Setup Pegasus (Already Done)${NC}"
+    else
+        echo -e "${GREEN}  2. Setup Pegasus${NC}"
+    fi
+
+    echo -e "${GREEN}  3. Select User Config${NC}"
+    echo -e "${GREEN}  4. Exit${NC}"
+    echo -e "${BLUE}---------------------------------${NC}"
+
+    # Ask user for input
+    read -p "Select an option: " choice
+
+    case $choice in
+        1) open_website ;;  
+        2) setup_pegasus ;;
+        3) select_user_config ;;
+        4) echo -e "${YELLOW}Exiting...${NC}"; exit ;;
+        *) echo -e "${RED}Invalid option! Try again.${NC}"; sleep 1 ;;
+    esac
+done
