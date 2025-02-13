@@ -1,0 +1,62 @@
+#!/bin/bash
+
+INSTALL_DIR="$HOME/.local/bin"
+
+# Function to install dependencies
+install_dependencies() {
+    echo "Installing required packages..."
+    pkg install -y git wget ffmpeg build-essential x11-repo qt5-qmake
+}
+
+# Function to clone or update Gemba Skyscraper
+setup_skyscraper_repo() {
+    echo "Creating and moving into source folder 'Skyscraper'..."
+    mkdir -p Skyscraper && cd Skyscraper || exit 1
+
+    if [ ! -d "Gemba" ]; then
+        echo "Fetching latest Gemba fork..."
+        git clone https://github.com/gemba/skyscraper -b master Gemba || exit 1
+    else
+        echo "Updating Gemba fork..."
+        cd Gemba || exit 1
+        git fetch --all
+        git reset --hard origin/master || exit 1
+    fi
+
+    cd Gemba || exit 1
+}
+
+# Function to make Skyscraper compatible with Termux
+patch_skyscraper() {
+    echo "Making Skyscraper compatible with Termux..."
+    sed -i 's|usr/local|data/data/com.termux/files/usr|g' skyscraper.pro
+    sed -i 's|usr/local|data/data/com.termux/files/usr|g' ./src/config.cpp
+    sed -i 's|usr/local|data/data/com.termux/files/usr|g' ./supplementary/scraperdata/check_screenscraper_json_to_idmap.py
+    sed -i 's|usr/local|data/data/com.termux/files/usr|g' ./supplementary/scraperdata/peas_and_idmap_verify.py
+}
+
+# Function to compile Skyscraper
+compile_skyscraper() {
+    echo "Compiling Skyscraper..."
+    qmake || exit 1
+    make || exit 1
+    make install || exit 1
+}
+
+# Function to move and make the Skyscraper binary executable
+install_skyscraper() {
+    echo "Installing Skyscraper..."
+    mkdir -p "$INSTALL_DIR"
+    cp Skyscraper "$INSTALL_DIR/skyscraper"
+    chmod +x "$INSTALL_DIR/skyscraper"
+    echo "Skyscraper installed successfully in $INSTALL_DIR"
+}
+
+# Run functions in order
+install_dependencies
+setup_skyscraper_repo
+patch_skyscraper
+compile_skyscraper
+install_skyscraper
+
+echo "Done! Please run 'skyscraper' to verify installation."
